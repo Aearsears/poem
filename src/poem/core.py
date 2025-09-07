@@ -272,7 +272,7 @@ def get_remote_versions() -> None:
             })
 
         print(
-            f"Available Poetry versions: {[release['tag_name'].lstrip("v") for release in releases]}")
+            f"Available Poetry versions: {[release['tag_name'].lstrip('v') for release in releases]}")
 
     except Exception as e:
         print(f"Failed to fetch remote versions: {str(e)}", file=sys.stderr)

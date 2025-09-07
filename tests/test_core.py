@@ -7,6 +7,7 @@ from poem.core import (
     get_current_version,
     install_version,
     switch_version,
+    get_remote_versions,
 )
 import os
 import platform
@@ -14,6 +15,8 @@ import subprocess
 import sys
 import pytest
 from unittest.mock import patch, MagicMock
+import unittest
+import io
 
 # Add src directory to path for tests
 sys.path.insert(0, os.path.join(os.path.dirname(
@@ -96,3 +99,101 @@ def test_get_current_version(mock_run_command, capsys):
     assert result == "1.1.0"
     captured = capsys.readouterr()
     assert "Current poetry version: 1.1.0" in captured.out
+
+
+class TestGetRemoteVersions(unittest.TestCase):
+    @patch("poem.core.HTTP")
+    def test_get_remote_versions_success(self, mock_http):
+        # Mock the HTTP.get method to return sample GitHub API response
+        mock_response = [
+            {
+                "tag_name": "v1.7.1",
+                "prerelease": False,
+                "name": "Poetry 1.7.1"
+            },
+            {
+                "tag_name": "1.6.0",
+                "prerelease": False,
+                "name": "Poetry 1.6.0"
+            },
+            {
+                "tag_name": "1.5.0-rc.1",
+                "prerelease": True,
+                "name": "Poetry 1.5.0-rc.1"
+            }
+        ]
+        mock_http.get.return_value = mock_response
+
+        # Capture stdout to verify output
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        # Call the function
+        get_remote_versions()
+
+        # Restore stdout
+        sys.stdout = sys.__stdout__
+
+        # Verify HTTP.get was called with correct parameters
+        mock_http.get.assert_called_once_with(
+            "https://api.github.com/repos/python-poetry/poetry/releases",
+            headers={
+                "User-Agent": "pvm-tool",
+                "Accept": "application/vnd.github.v3+json"
+            }
+        )
+
+        # Verify output contains expected versions
+        output = captured_output.getvalue()
+        self.assertIn("Fetching available versions from GitHub", output)
+        self.assertIn("1.7.1", output)
+        self.assertIn("1.6.0", output)
+        self.assertIn("1.5.0-rc.1", output)
+
+    @patch("poem.core.HTTP")
+    def test_get_remote_versions_error(self, mock_http):
+        # Mock HTTP.get to raise an exception
+        mock_http.get.side_effect = Exception("Network error")
+
+        # Capture stdout and stderr to verify output
+        captured_output = io.StringIO()
+        captured_error = io.StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_error
+
+        # Call the function
+        get_remote_versions()
+
+        # Restore stdout and stderr
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        # Verify error message
+        error_output = captured_error.getvalue()
+        output = captured_output.getvalue()
+        self.assertIn(
+            "Failed to fetch remote versions: Network error", error_output)
+        self.assertIn("Try using pip: pip index versions poetry", output)
+
+    @patch("poem.core.HTTP")
+    def test_get_remote_versions_empty_response(self, mock_http):
+        # Mock HTTP.get to return empty list
+        mock_http.get.return_value = []
+
+        # Capture stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        # Call the function
+        get_remote_versions()
+
+        # Restore stdout
+        sys.stdout = sys.__stdout__
+
+        # Verify output shows empty list
+        output = captured_output.getvalue()
+        self.assertIn("Available Poetry versions: []", output)
+
+
+if __name__ == "__main__":
+    unittest.main()
