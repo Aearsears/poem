@@ -12,7 +12,8 @@ dependencies = [
 ]
 
 [project.scripts]
-poem = "poem.cli:main"
+pvm = "poem.cli:main"
+poem = "poem.cli:main"  # Keep original name for backward compatibility
 
 [tool.setuptools]
 package-dir = {"" = "src"}
