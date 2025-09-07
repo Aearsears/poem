@@ -1,5 +1,7 @@
 """Core functionality for managing poetry versions."""
 
+import threading
+import itertools
 import http.client
 import logging
 import os
@@ -8,6 +10,7 @@ import subprocess
 import sys
 import json
 from pathlib import Path
+from time import time, sleep
 from typing import List, Optional, Tuple, Dict
 
 from poem.http import HTTP
@@ -265,12 +268,31 @@ def get_remote_versions() -> None:
     pass
     try:
         print("Fetching available versions from GitHub...")
+
+        stop_animation = False
+        # TODO: move into context manager
+
+        def animate_spinner():
+            spinner_chars = itertools.cycle(
+                ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
+            while not stop_animation:
+                sys.stdout.write('\b' + next(spinner_chars))
+                sys.stdout.flush()
+                sleep(0.1)
+
+        animation_thread = threading.Thread(target=animate_spinner)
+        animation_thread.daemon = True
+        animation_thread.start()
+
         releases = HTTP.get(
             "https://api.github.com/repos/python-poetry/poetry/releases", headers={
                 "User-Agent": "pvm-tool",
                 "Accept": "application/vnd.github.v3+json"
             })
+        stop_animation = True
+        animation_thread.join(timeout=1.0)
 
+        print("\r" + " " * 40 + "\r", end="")
         print(
             f"Available Poetry versions: {[release['tag_name'].lstrip('v') for release in releases]}")
 

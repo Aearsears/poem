@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class HTTP:
+    # TODO: refactor as context manager
     @staticmethod
     def get(url: str, headers: dict = None) -> dict:
         """Send a GET request."""
