@@ -1,0 +1,17 @@
+[project]
+name = "poem"
+version = "0.1.0"
+description = "Manage poetry versions"
+authors = [
+    {name = "Aearsears",email = "53102185+Aearsears@users.noreply.github.com"}
+]
+license = {text = "GPL-3.0"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
