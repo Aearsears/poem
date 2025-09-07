@@ -18,16 +18,23 @@ from poem.core import (
     which_poetry,
     doctor,
 )
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the command line argument parser."""
     parser = argparse.ArgumentParser(
-        prog="pvm",  # Changed from "poem" to "pvm" based on README commands
+        prog="poem",
         description="Poetry Version Manager - A CLI tool for managing poetry versions",
     )
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
+    )
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output"
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -107,6 +114,10 @@ def main(args: Optional[List[str]] = None) -> int:
 
     parser = create_parser()
     parsed_args = parser.parse_args(args)
+
+    if parsed_args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("Debug mode enabled")
 
     if not parsed_args.command:
         parser.print_help()

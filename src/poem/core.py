@@ -1,5 +1,7 @@
 """Core functionality for managing poetry versions."""
 
+import http.client
+import logging
 import os
 import platform
 import subprocess
@@ -7,6 +9,8 @@ import sys
 import json
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
+
+from poem.http import HTTP
 
 
 def _get_poetry_home() -> str:
@@ -261,18 +265,15 @@ def get_remote_versions() -> None:
     pass
     try:
         print("Fetching available versions from GitHub...")
-        response = requests.get(
-            "https://api.github.com/repos/python-poetry/poetry/releases",
-            timeout=10
-        )
-        response.raise_for_status()
+        releases = HTTP.get(
+            "https://api.github.com/repos/python-poetry/poetry/releases", headers={
+                "User-Agent": "pvm-tool",
+                "Accept": "application/vnd.github.v3+json"
+            })
 
-        releases = response.json()
-        print("Available Poetry versions:")
+        print(
+            f"Available Poetry versions: {[release['tag_name'].lstrip("v") for release in releases]}")
 
-        for release in releases:
-            version = release["tag_name"].lstrip("v")
-            print(f"- {version}")
     except Exception as e:
         print(f"Failed to fetch remote versions: {str(e)}", file=sys.stderr)
         print("Try using pip: pip index versions poetry")
