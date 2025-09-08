@@ -14,6 +14,7 @@ from time import time, sleep
 from typing import List, Optional, Tuple, Dict
 
 from poem.http import HTTP, HTTPClient
+from poem.spinner import Spinner
 
 
 def _get_poetry_home() -> str:
@@ -268,35 +269,12 @@ def get_remote_versions() -> None:
     try:
         print("Fetching available versions from GitHub...")
 
-        stop_animation = False
-        # TODO: move into context manager
-
-        def animate_spinner():
-            spinner_chars = itertools.cycle(
-                ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
-            while not stop_animation:
-                sys.stdout.write('\b' + next(spinner_chars))
-                sys.stdout.flush()
-                sleep(0.1)
-
-        animation_thread = threading.Thread(target=animate_spinner)
-        animation_thread.daemon = True
-        animation_thread.start()
-
-        with HTTPClient("https://api.github.com", timeout=10) as http:
-            releases = http.get(
-                "/repos/python-poetry/poetry/releases", headers={
+        with Spinner() as _:
+            releases = HTTP.get(
+                "https://api.github.com/repos/python-poetry/poetry/releases", headers={
                     "User-Agent": "pvm-tool",
                     "Accept": "application/vnd.github.v3+json"
                 })
-
-        # releases = HTTP.get(
-        #     "https://api.github.com/repos/python-poetry/poetry/releases", headers={
-        #         "User-Agent": "pvm-tool",
-        #         "Accept": "application/vnd.github.v3+json"
-        #     })
-        stop_animation = True
-        animation_thread.join(timeout=1.0)
 
         print("\r" + " " * 40 + "\r", end="")
         print(
