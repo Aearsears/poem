@@ -25,8 +25,9 @@ class Spinner():
         sys.stdout.flush()
 
     def _animate(self):
-        spinner_chars = itertools.cycle(self.spinner_cycle)
+        i = 0
         while self.running:
-            sys.stdout.write('\b' + next(spinner_chars))
+            sys.stdout.write('\b' + self.spinner_cycle[i])
             sys.stdout.flush()
             sleep(0.1)
+            i = (i + 1) % len(self.spinner_cycle)
