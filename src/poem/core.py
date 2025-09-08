@@ -13,7 +13,7 @@ from pathlib import Path
 from time import time, sleep
 from typing import List, Optional, Tuple, Dict
 
-from poem.http import HTTP
+from poem.http import HTTP, HTTPClient
 
 
 def _get_poetry_home() -> str:
@@ -265,7 +265,6 @@ def uninstall_version(version: str) -> None:
 
 def get_remote_versions() -> None:
     """List available Poetry versions from GitHub releases."""
-    pass
     try:
         print("Fetching available versions from GitHub...")
 
@@ -284,11 +283,18 @@ def get_remote_versions() -> None:
         animation_thread.daemon = True
         animation_thread.start()
 
-        releases = HTTP.get(
-            "https://api.github.com/repos/python-poetry/poetry/releases", headers={
-                "User-Agent": "pvm-tool",
-                "Accept": "application/vnd.github.v3+json"
-            })
+        with HTTPClient("https://api.github.com", timeout=10) as http:
+            releases = http.get(
+                "/repos/python-poetry/poetry/releases", headers={
+                    "User-Agent": "pvm-tool",
+                    "Accept": "application/vnd.github.v3+json"
+                })
+
+        # releases = HTTP.get(
+        #     "https://api.github.com/repos/python-poetry/poetry/releases", headers={
+        #         "User-Agent": "pvm-tool",
+        #         "Accept": "application/vnd.github.v3+json"
+        #     })
         stop_animation = True
         animation_thread.join(timeout=1.0)
 
