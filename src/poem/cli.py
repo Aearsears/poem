@@ -20,6 +20,8 @@ from poem.core import (
 )
 import logging
 
+from poem.directories import install_shims
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -98,6 +100,9 @@ def create_parser() -> argparse.ArgumentParser:
     which_parser = subparsers.add_parser(
         "which", help="Show the path to the active Poetry binary"
     )
+    init_parser = subparsers.add_parser(
+        "init", help="Initialize poem by installing shims for Poetry"
+    )
 
     # Doctor command
     subparsers.add_parser(
@@ -143,6 +148,8 @@ def main(args: Optional[List[str]] = None) -> int:
         which_poetry()
     elif parsed_args.command == "doctor":
         doctor()
+    elif parsed_args.command == "init":
+        install_shims()
     else:
         print(f"Unknown command: {parsed_args.command}")
         parser.print_help()
