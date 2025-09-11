@@ -44,7 +44,7 @@ class HTTPClient:
 
 class HTTP:
     @staticmethod
-    def get(url: str, headers: dict = None) -> dict:
+    def get(url: str, headers: dict = None) -> bytes:
         """Send a GET request."""
         scheme, host, path = HTTP.get_host(url)
         logging.debug(
@@ -57,11 +57,10 @@ class HTTP:
 
         conn.request("GET", path, headers=headers)
         res = conn.getresponse()
-        raw_data = res.read()
-        logging.debug(f"Response data size: {len(raw_data)} bytes")
-        data = json.loads(raw_data.decode("utf-8"))
+        raw_body = res.read()
+        logging.debug(f"Response data size: {len(raw_body)} bytes")
         conn.close()
-        return data
+        return raw_body
 
     @staticmethod
     def get_host(url: str) -> tuple[str | None, str | None, str | None]:

@@ -99,12 +99,45 @@ def install_version(version: str) -> None:
     """
     print(f"Installing poetry version {version}...")
 
-    # We use pip to install a specific version
     try:
-        _run_command(["pip", "install", f"poetry=={version}"])
+        import tempfile
+        from pathlib import Path
+
+        # Download the installer script
+        installer_url = "https://install.python-poetry.org"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp_file:
+            response = HTTP.get(
+                installer_url, headers={
+                    "User-Agent": "pvm-tool",
+                })
+            temp_file.write(response)
+            installer_path = temp_file.name
+
+        # Set the version environment variable for the installer
+        env = os.environ.copy()
+        env["POETRY_VERSION"] = version
+
+        # Set POETRY_HOME to our version-specific directory
+        poetry_home = _get_poetry_home()
+        version_specific_home = os.path.join(poetry_home, "venv", version)
+        env["POETRY_HOME"] = version_specific_home
+
+        # Run the installer
+        with Spinner() as _:
+            result = subprocess.run(
+                [sys.executable, installer_path],
+                env=env,
+                check=True,
+                text=True,
+            )
+
         print(f"Successfully installed poetry {version}")
-    except subprocess.SubprocessError:
-        print(f"Failed to install poetry {version}", file=sys.stderr)
+
+        # Clean up the temporary file
+        Path(installer_path).unlink(missing_ok=True)
+
+    except Exception as e:
+        print(f"Failed to install poetry {version}: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -270,11 +303,11 @@ def get_remote_versions() -> None:
         print("Fetching available versions from GitHub...")
 
         with Spinner() as _:
-            releases = HTTP.get(
+            releases = json.loads(HTTP.get(
                 "https://api.github.com/repos/python-poetry/poetry/releases", headers={
                     "User-Agent": "pvm-tool",
                     "Accept": "application/vnd.github.v3+json"
-                })
+                }).decode("utf-8"))
 
         print("\r" + " " * 40 + "\r", end="")
         print(
