@@ -103,6 +103,9 @@ def create_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser(
         "init", help="Initialize poem by installing shims for Poetry"
     )
+    init_parser.add_argument(
+        "--add-to-path", action="store_true", help="Add shims to PATH automatically"
+    )
 
     # Doctor command
     subparsers.add_parser(
